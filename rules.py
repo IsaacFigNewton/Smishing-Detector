@@ -1,28 +1,12 @@
 import re
 
 egg = "egg"
-susWords = open("wordlist.txt", "r").readlines()
-for i in range(len(susWords)):
-    susWords[i] = susWords[i].replace("\n", "")
 
 susChars = open("charlist.txt", "r").readlines()
 for i in range(len(susChars)):
     susChars[i] = susChars[i].replace("\n", "")
 
-# Rule 1: If URL present in the message, THEN it is probably a smishing message.
-def containsURL(sms):
-    sms.replace(". ", ".")
-    text = sms.split(" ")
 
-    for word in text:
-        # if it matches the format of a URL
-        if word.find("..") < 0\
-                and word.count(".") > 1\
-                and len(word) > 11\
-                and re.match(r"^(http://)?(www\.)?[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/[a-zA-Z0-9_\-./]+)?(\?[a-zA-Z0-9=&]+)?$", word):
-            return True
-
-    return False
 
 
 # broken
@@ -37,8 +21,6 @@ def containsURL(sms):
     return False
 
 
-# not accurate enough
-# Rule 4: IF mobile number present in the message, THEN it is a probably a smishing message.
 def containsPhoneNum(sms):
     # if sms == "do you want a new video handset? 750 any time any network mins? unlimited text? camcorder? reply or call now 08000930705 for del sat am":
     #     print(egg)
@@ -76,25 +58,6 @@ def containsPhoneNum(sms):
 
     return False
 
-
-# Rule 5: The presence of suspicious keywords like, free, accident, awards, dating, won, service, lottery, mins,
-    #   visit, delivery, cash, claim, Prize, delivery, etc. are considered as smishing keywords. If any of the suspicious
-    #   keyword present in the message, THEN it is a presumably a smishing message.
-def susWordCount(sms):
-    textCombos = sms.split(" ")
-    count = 0
-
-    for word in textCombos:
-        for end in range(len(word)):
-            for start in range(end):
-                if word[start:end + 1] in susWords:
-                    count += 1
-
-    return count
-
-
-# Rule 6: IF message length is greater than 150 character, THEN it is potentially a smishing message.
-#     This length including space, symbols, special characters, smileys, etc.
 def isLong(sms):
     return len(sms) > 150
 

@@ -1,17 +1,21 @@
 import rules as r
 
-def isSpam(sms):
-
+def isSpam(sms, wordList, weightScaling):
     score = 0
+
     if (r.containsURL(sms)):
         score += 0.4
 
     if (r.containsPhoneNum(sms)):
         score += 0.5
 
-    # idea: weigh different words differently based on whether they're more likely to appear in a spam or ham text
-    # maybe this is where TFIDF/NLP comes in
-    score += 0.2 * r.susWordCount(sms)
+
+    for word in sms:
+        # for end in range(len(word)):
+        #     for start in range(end):
+        #         if word[start:end + 1] in susWords:
+        if word in wordList:
+            score += weightScaling * wordList[word]
 
     score += 0.03 * r.susCharCount(sms)
 
