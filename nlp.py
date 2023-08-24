@@ -21,7 +21,7 @@ def getDFDict(dataset, hamSpam):
 
             # break each sms into a list of its component words
             text = sms[1]
-            text = text.split()
+            text = text.split(" ")
 
             # check if each word in the text is in the idfDict, and if it isn't put it there
             for word in text:
@@ -65,14 +65,13 @@ def sigmoid(freq):
 # combine the dict of words commonly found in spam with the list of words commonly found in ham destructively
 def getSusDict(dataset, minSusFreq, minAntiSusFreq):
     susDict = removeUncommonWords(getDFDict(dataset, True), minSusFreq)
-
     antiSusDict = removeUncommonWords(getDFDict(dataset, False), minAntiSusFreq)
 
 
     # combine the sus and antisus frequencies destructively
     for sus in susDict.keys():
         if sus in antiSusDict:
-            susDict[sus] = susDict[sus] - antiSusDict[sus]
+            susDict[sus] = susDict[sus] - antiSusDict[sus] * 0.7
 
     for antiSus in antiSusDict.keys():
         if antiSus not in susDict:
@@ -82,3 +81,24 @@ def getSusDict(dataset, minSusFreq, minAntiSusFreq):
         susDict[sus] = sigmoid(susDict[sus])
 
     return susDict
+
+
+    # # combine the sus and antisus frequencies destructively using idf
+    # max pos accuracy of 85.68%
+    # max neg accuracy of 84.83%
+    # for sus in susDict.keys():
+    #     # get idf of sus words
+    #     susDict[sus] = math.log(5574.0 / susDict[sus])
+    #     if sus in antiSusDict:
+    #         # add the log of the df of the antisus words to the sus weight
+    #         susDict[sus] = susDict[sus] - math.log(antiSusDict[sus])
+    #
+    # for antiSus in antiSusDict.keys():
+    #     if antiSus not in susDict:
+    #         # add the log of the df of the antisus words to the sus weight
+    #         susDict[antiSus] = -1 * math.log(5574.0 / antiSusDict[antiSus])
+    #
+    # # for sus in susDict.keys():
+    # #     susDict[sus] = sigmoid(susDict[sus])
+    #
+    # return susDict

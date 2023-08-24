@@ -1,6 +1,6 @@
 import rules as r
 
-def isSpam(sms, wordList, weightScaling):
+def isSpam(sms, wordList, antiWordList, susList, weightScaling):
     score = 0
 
     if (r.containsURL(sms)):
@@ -9,13 +9,18 @@ def isSpam(sms, wordList, weightScaling):
     if (r.containsPhoneNum(sms)):
         score += 0.5
 
+    words = sms.split(" ")
+    for word in words:
 
-    for word in sms:
-        # for end in range(len(word)):
-        #     for start in range(end):
-        #         if word[start:end + 1] in susWords:
-        if word in wordList:
-            score += weightScaling * wordList[word]
+        for end in range(len(word)):
+            for start in range(end):
+                if word[start:end + 1] in susList:
+                    score += weightScaling * susList[word]
+                if word[start:end + 1] in wordList:
+                    score += 0.4
+                if word[start:end + 1] in antiWordList:
+                    score -= 0.16
+
 
     score += 0.03 * r.susCharCount(sms)
 
@@ -25,4 +30,5 @@ def isSpam(sms, wordList, weightScaling):
 
     if (score >= 0.5):
         return True
+
     return False

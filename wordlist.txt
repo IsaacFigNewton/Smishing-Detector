@@ -3,7 +3,7 @@ opt out
 free
 investment
 membership
-awarded
+award
 trial
 $$$
  xxx 
@@ -13,25 +13,27 @@ bargain
 guaranteed
 cures
 certified
-cure
-#1
-100%
+ #1 
+ 100%
 exclusive
 unlimited
 millions
 multi-level
-passwords
-social-security
-undisclosed
-unsecured
-unsolicited
+password
+social security
+disclosed
+secured
+solicited
 debt
 credit
 beneficiary
 billing
+ bill
 claims
 rates
+ rate
 loans
+ loan
 luxury
 marketing
 mortgage
@@ -47,19 +49,18 @@ financial
 income
 cash
 refinance
+ finance
 money
 refund
 paid
 fees
+ fee
 obligation
 spam
-urgent
 jackpot
-subscription
-subscribe
+subscri
 prize
 won
-claim
 redeem
 :"
 www
@@ -67,19 +68,13 @@ www
 sex
 charge
 account
-sexy
 reply
 win
 ringtone
 subscribe
 p/
-txt
+ txt
 freemsg
-final
-text
-link
-goal
+network
 club
 scor
-message
-network

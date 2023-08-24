@@ -9,9 +9,19 @@ def format(stat):
 
 if __name__ == "__main__":
 
-    # Process dataset into something usable
+    TP = TN = FP = FN = 0
+
+    wordlist = open("wordlist.txt", "r").readlines()
+    for i in range(len(wordlist)):
+        wordlist[i] = wordlist[i].replace("\n", "")
+
+    antiWordlist = open("antiwordlist.txt", "r").readlines()
+    for i in range(len(antiWordlist)):
+        antiWordlist[i] = antiWordlist[i].replace("\n", "")
+
     dataset = open("dataset/SMSSpamCollection", "r")
     dataset = dataset.readlines()
+
     categories = {"ham": False, "spam": True}
 
     # convert each sms to a list of 2 items, with True indicating that it's spam and False indicating ham
@@ -24,69 +34,58 @@ if __name__ == "__main__":
         dataset[i] = (categories[sms[0]], sms[1])
         # print(sms[i])
 
-    min = 1
-
     # mins of 1 used in search, maxes of 20 used in search because no visible improvement after that
-    for k in range(min, 20):
-        for l in range(min, 20):
-            # weight range of 0.00 - 0.99 used in search
-            for w in range(100):
-                TP = TN = FP = FN = 0
+    # defaults are 1, 10
+    susWords = {}#nlp.getSusDict(dataset, 1, 10)
+    # print(susWords)
 
-                # defaults are 1, 10
-                susWords = nlp.getSusDict(dataset, k, l)
-                # print(susWords)
+    for sms in dataset:
 
-                for sms in dataset:
+        # plug sms into decision tree
+        # default is weightScaling
+        # weight range of 0.00 - 0.99 used in search, optimal found to be 0.0147
+        category = sf.isSpam(sms[1], wordlist, antiWordlist, susWords, 0.0147)
 
-                    # plug sms into decision tree
-                    # default is weightScaling
-                    category = sf.isSpam(sms[1], susWords, w/100.0)
+        # determine confusion matrix stats
+        # if the algo thinks it's spam
+        if (category):
 
-                    # determine confusion matrix stats
-                    # if the algo thinks it's spam
-                    if (category):
+            # and spam in reality
+            if (sms[0]):
+                TP += 1
+            # or ham in reality
+            else:
+                # print("False positive: " + sms[1])
+                FP += 1
 
-                        # and spam in reality
-                        if (sms[0]):
-                            TP += 1
-                        # or ham in reality
-                        else:
-                            # print("False positive: " + dataset[i][1])
-                            FP += 1
+        # if the algo thinks it's ham
+        else:
 
-                    # if the algo thinks it's ham
-                    else:
+            # and spam in reality
+            if (sms[0]):
+                # print("False negative: " + sms[1])
+                FN += 1
+            # or ham in reality
+            else:
+                TN += 1
 
-                        # and spam in reality
-                        if (sms[0]):
-                            # print("False negative: " + sms[1])
-                            FN += 1
-                        # or ham in reality
-                        else:
-                            TN += 1
+    TP /= 5574
+    TN /= 5574
+    FP /= 5574
+    FN /= 5574
 
-                TP /= 5574
-                TN /= 5574
-                FP /= 5574
-                FN /= 5574
+    print(susWords)
+    print("\nTrue Pos Accuracy:\t" + str('%.2f'%(TP / (TP + FN) * 100)) + "%")
+    print("True Neg Accuracy:\t" + str('%.2f'%(TN / (TN + FP) * 100)) + "%")
+    print("Average Accuracy:\t"
+            + str('%.2f'%(((TP / (TP + FN))
+            + (TN / (TN + FP))) * 50))
+            + "%")
 
-                if (TP / (TP + FN) > 0.9 and TN / (TN + FP) > 0.9):
-                    print("\n\nSus min threshold: " + str(k))
-                    print("Antisus min threshold: " + str(l))
-                    print("Word weight scaling: " + str(w/100))
-                    print("True Pos Accuracy:\t" + str('%.2f'%(TP / (TP + FN) * 100)) + "%")
-                    print("True Neg Accuracy:\t" + str('%.2f'%(TN / (TN + FP) * 100)) + "%")
-    # print("Average Accuracy:\t"
-    #         + str('%.2f'%(((TP / (TP + FN))
-    #         + (TN / (TN + FP))) * 50))
-    #         + "%")
-
-    # # print confusion matrix
-    # print("\t\t\t\t\t\tReality:\n" +
-    #       "\t\t\t\t|\tHam\t\t|\tSpam\t|\n" +
-    #       "\t\t\tHam\t|" + format(TN) + "|" + format(FN) + "|\n"
-    #       "Prediction:\t----|-----------|-----------|\n"
-    #       "\t\t\tSpam|" + format(FP) + "|" + format(TP) + "|\n"
-    #       "\t\t\t\t|\t\t\t|\t\t\t|\n")
-    print("Finished")
+    # print confusion matrix
+    print("\t\t\t\t\t\tReality:\n" +
+          "\t\t\t\t|\tHam\t\t|\tSpam\t|\n" +
+          "\t\t\tHam\t|" + format(TN) + "|" + format(FN) + "|\n"
+          "Prediction:\t----|-----------|-----------|\n"
+          "\t\t\tSpam|" + format(FP) + "|" + format(TP) + "|\n"
+          "\t\t\t\t|\t\t\t|\t\t\t|\n")
