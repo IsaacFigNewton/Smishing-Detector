@@ -42,22 +42,23 @@ if __name__ == "__main__":
 
             # and spam in reality
             if (dataset[i][0]):
-                # print("False negative: " + dataset[i][1])
+                print("False negative: " + dataset[i][1])
                 FN += 1
             # or ham in reality
             else:
                 TN += 1
-
-    accuracy = (TP + TN)/(TP + TN + FP + FN)
 
     TP /= 5574
     TN /= 5574
     FP /= 5574
     FN /= 5574
 
-    print("\n\nAccuracy:\t" + str('%.2f'%(accuracy * 100)) + "%")
-    print("Spam ID Accuracy:\t" + str('%.2f'%(TP / (TP + FN) * 100)) + "%")
-    print("Ham ID Accuracy:\t" + str('%.2f'%(TN / (TN + FP) * 100)) + "%")
+    print("\n\nTrue Pos Accuracy:\t" + str('%.2f'%(TP / (TP + FN) * 100)) + "%")
+    print("True Neg Accuracy:\t" + str('%.2f'%(TN / (TN + FP) * 100)) + "%")
+    print("Average Accuracy:\t"
+            + str('%.2f'%(((TP / (TP + FN))
+            + (TN / (TN + FP))) * 50))
+            + "%")
 
     # print confusion matrix
     print("\t\t\t\t\t\tReality:\n" +

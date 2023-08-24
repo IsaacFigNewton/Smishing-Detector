@@ -1,49 +1,23 @@
 import rules as r
 
 def isSpam(sms):
-    # decsn tree:
-    # if (r.susWordCount(sms) > 0):
-    #     if (r.containsPhoneNum(sms)
-    #         or r.containsEmail(sms)
-    #         or r.containsURL(sms)
-    #         or r.containsCurrency(sms)
-    #         or r.weirdCharCount(sms) > 0
-    #         or r.isLong(sms)
-    #         or r.mathSymbolCount(sms) > 0):
-    #         return True
-    #     else:
-    #         return r.selfAnswering(sms)
-    #
-    # else:
-    #     return r.containsPhoneNum(sms) or r.containsURL(sms) or r.containsEmail(sms)
 
     score = 0
     if (r.containsURL(sms)):
-        score += 0.5
-
-    score += 0.3 * r.mathSymbolCount(sms)
-
-    if (r.containsCurrency(sms)):
-        score += 0.5
+        score += 0.4
 
     if (r.containsPhoneNum(sms)):
         score += 0.5
 
-    score += 0.3 * r.susWordCount(sms)
+    # idea: weigh different words differently based on whether they're more likely to appear in a spam or ham text
+    # maybe this is where TFIDF/NLP comes in
+    score += 0.2 * r.susWordCount(sms)
 
-    if (r.isLong(sms)):
-        score += 0.5
+    score += 0.03 * r.susCharCount(sms)
 
-    if (r.selfAnswering(sms)):
-        score += 0.5
-
-    # if (containsMorpheme(sms)):
+    # if (r.isLong(sms)):
     #     score += 0.05
 
-    if (r.containsEmail(sms)):
-        score += 0.5
-
-    score += 0.05 * r.weirdCharCount(sms)
 
     if (score >= 0.5):
         return True
