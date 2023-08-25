@@ -55,7 +55,7 @@ if __name__ == "__main__":
                 TP += 1
             # or ham in reality
             else:
-                # print("False positive: " + sms[1])
+                print("False positive: " + sms[1])
                 FP += 1
 
         # if the algo thinks it's ham

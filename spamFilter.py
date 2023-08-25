@@ -17,9 +17,9 @@ def isSpam(sms, wordList, antiWordList, susList, weightScaling):
                 if word[start:end + 1] in susList:
                     score += weightScaling * susList[word]
                 if word[start:end + 1] in wordList:
-                    score += 0.4
+                    score += 0.35
                 if word[start:end + 1] in antiWordList:
-                    score -= 0.16
+                    score -= 0.24
 
 
     score += 0.03 * r.susCharCount(sms)
