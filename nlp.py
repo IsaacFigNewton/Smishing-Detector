@@ -1,8 +1,5 @@
 import math
 
-# minSusFreq = 1
-# minAntiSusFreq = 4
-
 # create a dictionary of words that appear in the dataset and the number of docs that contain them
 def getDFDict(dataset, hamSpam):
     idfDict = {}
@@ -23,23 +20,26 @@ def getDFDict(dataset, hamSpam):
             text = sms[1]
             text = text.split(" ")
 
-            # check if each word in the text is in the idfDict, and if it isn't put it there
+            # check if every possible word in the text is in the idfDict, and if it isn't put it there
             for word in text:
-                if word in idfDict:
-                    if word not in countedWords:
-                        idfDict[word] += 1
-                        countedWords.add(word)
-                else:
-                    idfDict[word] = 1
+                for end in range(len(word)):
+                    for start in range(end):
+                        wordPiece = word[start:end + 1]
+                        if wordPiece in idfDict:
+                            if wordPiece not in countedWords:
+                                idfDict[wordPiece] += 1
+                                countedWords.add(wordPiece)
+                        else:
+                            idfDict[wordPiece] = 1
 
     return idfDict
 
 
-def removeUncommonWords(dict, minFreq):
+def pruneWords(dict, minFreq, maxLen):
     wordsToRemove = []
 
     for key in dict.keys():
-        if (minFreq >= dict[key]):
+        if (minFreq >= dict[key] or len(key) >= maxLen):
             # add it to a list of words to prune
             wordsToRemove.append(key)
 
@@ -63,42 +63,44 @@ def sigmoid(freq):
 
 
 # combine the dict of words commonly found in spam with the list of words commonly found in ham destructively
-def getSusDict(dataset, minSusFreq, minAntiSusFreq):
-    susDict = removeUncommonWords(getDFDict(dataset, True), minSusFreq)
-    antiSusDict = removeUncommonWords(getDFDict(dataset, False), minAntiSusFreq)
+def getSusDict(dataset, minSusFreq = 1, minAntiSusFreq = 10, maxLen = 10):
+    maxSussiness = 5.5
+    antiSusScale = 0.8
+
+    minThreshold = 1
+    wordsToRemove = []
+
+    susDict = pruneWords(getDFDict(dataset, True), minSusFreq, maxLen)
+    antiSusDict = pruneWords(getDFDict(dataset, False), minAntiSusFreq, maxLen)
 
 
-    # combine the sus and antisus frequencies destructively
+    # combine the sus and antisus frequencies destructively and then put them on a stretched sigmoid about 0
     for sus in susDict.keys():
         if sus in antiSusDict:
-            susDict[sus] = susDict[sus] - antiSusDict[sus] * 0.7
+            susDict[sus] = 2 * sigmoid(susDict[sus] - antiSusDict[sus]) - 1
+
+        else:
+            susDict[sus] = maxSussiness
 
     for antiSus in antiSusDict.keys():
         if antiSus not in susDict:
-            susDict[antiSus] = -1 * antiSusDict[antiSus]
+            susDict[antiSus] = -antiSusScale * math.log(antiSusDict[antiSus])
 
+    # trim the fat off the word list
     for sus in susDict.keys():
-        susDict[sus] = sigmoid(susDict[sus])
+        # if it's below the threshold, it probably won't affect the outcome much
+        if abs(susDict[sus]) < minThreshold:
+            wordsToRemove.append(sus)
+
+        # # if components of the word are already in the word list
+        # for end in range(len(sus)):
+        #     for start in range(end):
+        #         wordPiece = sus[start:end + 1]
+        #         if wordPiece in susDict:
+        #             wordsToRemove.append(sus)
+
+    for word in wordsToRemove:
+        if word in susDict:
+            del susDict[word]
 
     return susDict
-
-
-    # # combine the sus and antisus frequencies destructively using idf
-    # max pos accuracy of 85.68%
-    # max neg accuracy of 84.83%
-    # for sus in susDict.keys():
-    #     # get idf of sus words
-    #     susDict[sus] = math.log(5574.0 / susDict[sus])
-    #     if sus in antiSusDict:
-    #         # add the log of the df of the antisus words to the sus weight
-    #         susDict[sus] = susDict[sus] - math.log(antiSusDict[sus])
-    #
-    # for antiSus in antiSusDict.keys():
-    #     if antiSus not in susDict:
-    #         # add the log of the df of the antisus words to the sus weight
-    #         susDict[antiSus] = -1 * math.log(5574.0 / antiSusDict[antiSus])
-    #
-    # # for sus in susDict.keys():
-    # #     susDict[sus] = sigmoid(susDict[sus])
-    #
-    # return susDict

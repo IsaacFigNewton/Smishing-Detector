@@ -34,10 +34,8 @@ if __name__ == "__main__":
         dataset[i] = (categories[sms[0]], sms[1])
         # print(sms[i])
 
-    # mins of 1 used in search, maxes of 20 used in search because no visible improvement after that
-    # defaults are 1, 10
-    susWords = {}#nlp.getSusDict(dataset, 1, 10)
-    # print(susWords)
+    #                                   minSusFreq  minAntisusFreq  MaxLen
+    susWords = nlp.getSusDict(dataset,  2,          12,             10)
 
     for sms in dataset:
 
@@ -55,7 +53,7 @@ if __name__ == "__main__":
                 TP += 1
             # or ham in reality
             else:
-                print("False positive: " + sms[1])
+                # print("False positive: " + sms[1])
                 FP += 1
 
         # if the algo thinks it's ham
@@ -74,8 +72,9 @@ if __name__ == "__main__":
     FP /= 5574
     FN /= 5574
 
-    print(susWords)
-    print("\nTrue Pos Accuracy:\t" + str('%.2f'%(TP / (TP + FN) * 100)) + "%")
+    # print(susWords)
+    print("\nExtracted word list size: " + str(len(susWords)))
+    print("True Pos Accuracy:\t" + str('%.2f'%(TP / (TP + FN) * 100)) + "%")
     print("True Neg Accuracy:\t" + str('%.2f'%(TN / (TN + FP) * 100)) + "%")
     print("Average Accuracy:\t"
             + str('%.2f'%(((TP / (TP + FN))

@@ -58,9 +58,6 @@ def containsPhoneNum(sms):
 
     return False
 
-def isLong(sms):
-    return len(sms) > 150
-
 
 def susCharCount(sms):
     count = 0

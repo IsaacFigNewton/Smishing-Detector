@@ -11,24 +11,24 @@ def isSpam(sms, wordList, antiWordList, susList, weightScaling):
 
     words = sms.split(" ")
     for word in words:
-
         for end in range(len(word)):
             for start in range(end):
-                if word[start:end + 1] in susList:
-                    score += weightScaling * susList[word]
-                if word[start:end + 1] in wordList:
+                wordPiece = word[start:end + 1]
+                if wordPiece in susList:
+                    score += weightScaling * susList[wordPiece]
+                if wordPiece in wordList:
                     score += 0.35
-                if word[start:end + 1] in antiWordList:
+                if wordPiece in antiWordList:
                     score -= 0.24
 
 
-    score += 0.03 * r.susCharCount(sms)
+    # score += 0.03 * r.susCharCount(sms)
 
-    # if (r.isLong(sms)):
-    #     score += 0.05
+    if (len(sms) < 30):
+        score -= 5
 
 
-    if (score >= 0.5):
+    if (score >= 0):
         return True
 
     return False
