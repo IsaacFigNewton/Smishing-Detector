@@ -1,18 +1,49 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import nlp
-import spamFilter as sf
 
 datasetSize = 1
-testingsetSize = 0.1
+testingsetSize = 0.2
 minSusFreq = 4
 minAntisusFreq = 12
 maxLen = 10
 # weight range of 0.00 - 0.99 used in search, optimal found to be 0.0147
 weightScaling = 0.0147
 
+
+
+
+def isSpam(sms, wordList, antiWordList, susList):
+    score = 0
+
+    tokens = nlp.tokenize(sms, susList)
+
+    # print(sms)
+    # print("tokens: " + str(tokens))
+    # print()
+
+    for token in tokens:
+        score += weightScaling * susList[token]
+        if token in wordList:
+            score += 0.35
+        if token in antiWordList:
+            score -= 0.24
+
+    if (len(sms) < 30):
+        score -= 5
+
+    if (score >= 0):
+        return True
+
+    return False
+
+
+
+
 def format(stat):
     return "\t" + str('%.3f'%stat) + "\t"
+
+
 
 
 if __name__ == "__main__":
@@ -59,7 +90,7 @@ if __name__ == "__main__":
     print("testing spam detection...")
     for sms in testset:
 
-        category = sf.isSpam(sms[1], wordlist, antiWordlist, susWords, weightScaling)
+        category = isSpam(sms[1], wordlist, antiWordlist, susWords)
 
         # determine confusion matrix stats
         # if the algo thinks it's spam
@@ -78,7 +109,7 @@ if __name__ == "__main__":
 
             # and spam in reality
             if (sms[0]):
-                # print("False negative: " + sms[1])
+                print("False negative: " + sms[1])
                 FN += 1
             # or ham in reality
             else:

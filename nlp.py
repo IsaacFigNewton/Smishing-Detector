@@ -58,7 +58,7 @@ def tokenize(text, tokens):
     return tokenSet
 
 # create a dictionary of words that appear in the dataset and the number of docs that contain them
-def getDFDict(dataset, hamSpam):
+def getDFDict(dataset, hamSpam, maxTokenLeng):
     dfDict = {}
 
     for sms in dataset:
@@ -67,26 +67,14 @@ def getDFDict(dataset, hamSpam):
         if (sms[0] == hamSpam):
             countedWords = set()
 
-            # check if tokens in set, starting with largest tokens
-            # check if every possible word in the text is in the idfDict, and if it isn't put it there
-            # for end in range(len(sms[1])):
-            #     for start in range(end):
-            #         token = sms[1][start:end + 1]
-            #         if token in dfDict:
-            #             if token not in countedWords:
-            #                 dfDict[token] += 1
-            #                 countedWords.add(token)
-            #         else:
-            #             dfDict[token] = 1
-
-            # for some combined offset
+            # for some combined offset...
             for offset in range(len(sms[1])):
-                # loop through all possible maximal strings of the text up to the offset
+                # ...loop through all possible maximal strings of the text up to the offset
                 for start in range(offset + 1):
                     token = sms[1][start: len(sms[1]) - offset + start]
 
                     # if it's already in the token set...
-                    if len(token) < 20 and token in dfDict:
+                    if len(token) < maxTokenLeng and token in dfDict:
                         # ...and the token hasn't been counted for this sms yet
                         if token not in countedWords:
                             # ...and it's a maximal token string
@@ -132,16 +120,16 @@ def sigmoid(freq):
 def getSusDict(dataset, minSusFreq = 1, minAntiSusFreq = 10, maxLen = 10):
     maxSussiness = 5.5
     antiSusScale = 0.8
-
+    maxTokenLeng = 20
     minThreshold = 1
     wordsToRemove = []
 
     print("\tcreating sus token set...")
-    susDict = getDFDict(dataset, True)
+    susDict = getDFDict(dataset, True, maxTokenLeng)
     print("\tpruning sus token set...")
     susDict = pruneWords(susDict, minSusFreq, maxLen)
     print("\tcreating antisus token set...")
-    antiSusDict = getDFDict(dataset, False)
+    antiSusDict = getDFDict(dataset, False, maxTokenLeng)
     print("\tpruning antisus token set...")
     antiSusDict = pruneWords(antiSusDict, minAntiSusFreq, maxLen)
 
