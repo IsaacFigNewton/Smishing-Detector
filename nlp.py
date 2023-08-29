@@ -1,45 +1,111 @@
 import math
 
+
+def inRanges(tuple, ranges):
+    # if len(ranges) > 0:
+    #     print(ranges)
+
+    for range in ranges:
+        # if the start or end falls within the range
+        if (range[0] <= tuple[0] and tuple[0] < range[1] or range[0] <= tuple[1] and tuple[1] < range[1]):
+            return True
+
+    return False
+
+# decompose text into a minimal set of tokens from tokens dictionary
+def tokenize(text, tokens):
+    # print("tokenizing sms...")
+    # tokens to return
+    tokenSet = set()
+    # ranges to exclude from token consideration
+    excludeRanges = []
+
+    # for some combined offset
+    offset = 0
+    while offset < len(text):
+
+        # loop through all possible maximal strings of the text up to the offset
+        start = 0
+        while start < offset + 1:
+            end = len(text) - offset + start
+
+            # if the token is not in a range of chars to be excluded from consideration
+            if not inRanges((start, end), excludeRanges):
+                token = text[start: end]
+                # check if it's a valid token
+                if token in tokens:
+                    tokenSet.add(token)
+                    # if the token is in the token dict,
+                    # remove it from the text to consider by inserting it into a sorted list of ranges to exclude
+                    i = 0
+                    # print(len(excludeRanges))
+                    if len(excludeRanges) > 0:
+                        while excludeRanges[i][0] < start and i < len(excludeRanges) - 1:
+                            i += 1
+                            # print(i)
+                            # print(excludeRanges[i][0] < start and i < len(excludeRanges))
+                        # handle off-by-one bug
+                        if (i == len(excludeRanges) - 1):
+                            excludeRanges.append((start, end))
+                        else:
+                            excludeRanges.insert(i, (start, end))
+                    else:
+                        excludeRanges.append((start, end))
+
+            start += 1
+        offset += 1
+
+    return tokenSet
+
 # create a dictionary of words that appear in the dataset and the number of docs that contain them
 def getDFDict(dataset, hamSpam):
-    idfDict = {}
-
-    # wordlist = open("wordlist.txt", "r").readlines()
-    # for i in range(len(wordlist)):
-    #     wordlist[i] = wordlist[i].replace("\n", "")
-    #
-    # for word in wordlist:
-    #     idfDict[word] = 0.4
+    dfDict = {}
 
     for sms in dataset:
+        # print(sms[1])
         # add a word to the idfDict if the sms from which it originated is the type desired
         if (sms[0] == hamSpam):
             countedWords = set()
 
-            # break each sms into a list of its component words
-            text = sms[1]
-            text = text.split(" ")
-
+            # check if tokens in set, starting with largest tokens
             # check if every possible word in the text is in the idfDict, and if it isn't put it there
-            for word in text:
-                for end in range(len(word)):
-                    for start in range(end):
-                        wordPiece = word[start:end + 1]
-                        if wordPiece in idfDict:
-                            if wordPiece not in countedWords:
-                                idfDict[wordPiece] += 1
-                                countedWords.add(wordPiece)
-                        else:
-                            idfDict[wordPiece] = 1
+            # for end in range(len(sms[1])):
+            #     for start in range(end):
+            #         token = sms[1][start:end + 1]
+            #         if token in dfDict:
+            #             if token not in countedWords:
+            #                 dfDict[token] += 1
+            #                 countedWords.add(token)
+            #         else:
+            #             dfDict[token] = 1
 
-    return idfDict
+            # for some combined offset
+            for offset in range(len(sms[1])):
+                # loop through all possible maximal strings of the text up to the offset
+                for start in range(offset + 1):
+                    token = sms[1][start: len(sms[1]) - offset + start]
+
+                    # if it's already in the token set...
+                    if len(token) < 20 and token in dfDict:
+                        # ...and the token hasn't been counted for this sms yet
+                        if token not in countedWords:
+                            # ...and it's a maximal token string
+                            if len(tokenize(token, dfDict)) == 1:
+                                # increment the token counter
+                                dfDict[token] += 1
+                            # add it to the list of tokens to ignore
+                            countedWords.add(token)
+                    else:
+                        dfDict[token] = 1
+
+    return dfDict
 
 
 def pruneWords(dict, minFreq, maxLen):
     wordsToRemove = []
 
     for key in dict.keys():
-        if (minFreq >= dict[key] or len(key) >= maxLen):
+        if (minFreq >= dict[key] or (len(key) >= maxLen and " " not in key)):
             # add it to a list of words to prune
             wordsToRemove.append(key)
 
@@ -70,10 +136,17 @@ def getSusDict(dataset, minSusFreq = 1, minAntiSusFreq = 10, maxLen = 10):
     minThreshold = 1
     wordsToRemove = []
 
-    susDict = pruneWords(getDFDict(dataset, True), minSusFreq, maxLen)
-    antiSusDict = pruneWords(getDFDict(dataset, False), minAntiSusFreq, maxLen)
+    print("\tcreating sus token set...")
+    susDict = getDFDict(dataset, True)
+    print("\tpruning sus token set...")
+    susDict = pruneWords(susDict, minSusFreq, maxLen)
+    print("\tcreating antisus token set...")
+    antiSusDict = getDFDict(dataset, False)
+    print("\tpruning antisus token set...")
+    antiSusDict = pruneWords(antiSusDict, minAntiSusFreq, maxLen)
 
 
+    print("\tcombining token sets...")
     # combine the sus and antisus frequencies destructively and then put them on a stretched sigmoid about 0
     for sus in susDict.keys():
         if sus in antiSusDict:

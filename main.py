@@ -1,7 +1,15 @@
+import numpy as np
+import matplotlib.pyplot as plt
 import nlp
 import spamFilter as sf
 
-weightScaling = 0.01
+datasetSize = 1
+testingsetSize = 0.1
+minSusFreq = 4
+minAntisusFreq = 12
+maxLen = 10
+# weight range of 0.00 - 0.99 used in search, optimal found to be 0.0147
+weightScaling = 0.0147
 
 def format(stat):
     return "\t" + str('%.3f'%stat) + "\t"
@@ -21,28 +29,37 @@ if __name__ == "__main__":
 
     dataset = open("dataset/SMSSpamCollection", "r")
     dataset = dataset.readlines()
+    trainingset = [None] * int((1 - testingsetSize) * len(dataset) * datasetSize)
+    testset = [None] * int(testingsetSize * len(dataset) * datasetSize)
 
     categories = {"ham": False, "spam": True}
 
+    print("creating testing and training datasets...")
     # convert each sms to a list of 2 items, with True indicating that it's spam and False indicating ham
     # then convert each sms entry to a tuple
-    for i in range (len(dataset)):
+    for i in range(int(len(dataset) * datasetSize)):
         # let sms be the current text as a list [ham/spam, text]
         sms = dataset[i].replace("\n", "").lower().split("\t")
 
-        # let the current entry in the dataset be a tuple of (True/False, text)
-        dataset[i] = (categories[sms[0]], sms[1])
+        # if it's one of the first 90%, put it in the training dataset
+        if (i < len(trainingset)):
+            # let the current entry in the dataset be a tuple of (True/False, text)
+            trainingset[i] = (categories[sms[0]], sms[1])
+
+        # if it's one of the last 10%, put it in the testing dataset
+        else:
+            # let the current entry in the dataset be a tuple of (True/False, text)
+            testset[i - len(trainingset) - 1] = (categories[sms[0]], sms[1])
+
         # print(sms[i])
 
-    #                                   minSusFreq  minAntisusFreq  MaxLen
-    susWords = nlp.getSusDict(dataset,  2,          12,             10)
+    print("creating token sets...")
+    susWords = nlp.getSusDict(trainingset, minSusFreq, minAntisusFreq)
 
-    for sms in dataset:
+    print("testing spam detection...")
+    for sms in testset:
 
-        # plug sms into decision tree
-        # default is weightScaling
-        # weight range of 0.00 - 0.99 used in search, optimal found to be 0.0147
-        category = sf.isSpam(sms[1], wordlist, antiWordlist, susWords, 0.0147)
+        category = sf.isSpam(sms[1], wordlist, antiWordlist, susWords, weightScaling)
 
         # determine confusion matrix stats
         # if the algo thinks it's spam
@@ -67,13 +84,18 @@ if __name__ == "__main__":
             else:
                 TN += 1
 
-    TP /= 5574
-    TN /= 5574
-    FP /= 5574
-    FN /= 5574
+    TP /= len(testset)
+    TN /= len(testset)
+    FP /= len(testset)
+    FN /= len(testset)
+
+    # susTokenDoc = open("susDict.txt", "w")
+    # for token, weight in susWords.items():
+    #     susTokenDoc.writeline(str(token) + "\t" + str(weight))
+    # susTokenDoc.close()
 
     # print(susWords)
-    print("\nExtracted word list size: " + str(len(susWords)))
+    print("\nExtracted token list size: " + str(len(susWords)))
     print("True Pos Accuracy:\t" + str('%.2f'%(TP / (TP + FN) * 100)) + "%")
     print("True Neg Accuracy:\t" + str('%.2f'%(TN / (TN + FP) * 100)) + "%")
     print("Average Accuracy:\t"
