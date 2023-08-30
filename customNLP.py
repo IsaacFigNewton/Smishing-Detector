@@ -1,5 +1,10 @@
 import math
 
+maxSussiness = 5.5
+antiSusScale = 0.8
+maxLen = 10
+maxTokenLeng = 20
+minThreshold = 1
 
 def inRanges(tuple, ranges):
     # if len(ranges) > 0:
@@ -57,15 +62,15 @@ def tokenize(text, tokens):
 
     return tokenSet
 
-# create a dictionary of words that appear in the dataset and the number of docs that contain them
-def getDFDict(dataset, hamSpam, maxTokenLeng):
+# create a dictionary of tokens that appear in the dataset and the number of docs that contain them
+def getDFDict(dataset, hamSpam):
     dfDict = {}
 
     for sms in dataset:
         # print(sms[1])
-        # add a word to the idfDict if the sms from which it originated is the type desired
+        # add a token to the idfDict if the sms from which it originated is the type desired
         if (sms[0] == hamSpam):
-            countedWords = set()
+            countedTokens = set()
 
             # for some combined offset...
             for offset in range(len(sms[1])):
@@ -76,39 +81,33 @@ def getDFDict(dataset, hamSpam, maxTokenLeng):
                     # if it's already in the token set...
                     if len(token) < maxTokenLeng and token in dfDict:
                         # ...and the token hasn't been counted for this sms yet
-                        if token not in countedWords:
+                        if token not in countedTokens:
                             # ...and it's a maximal token string
                             if len(tokenize(token, dfDict)) == 1:
                                 # increment the token counter
                                 dfDict[token] += 1
                             # add it to the list of tokens to ignore
-                            countedWords.add(token)
+                            countedTokens.add(token)
                     else:
                         dfDict[token] = 1
 
     return dfDict
 
 
-def pruneWords(dict, minFreq, maxLen):
-    wordsToRemove = []
+def pruneTokens(dict, minFreq):
+    tokensToRemove = []
 
     for key in dict.keys():
         if (minFreq >= dict[key] or (len(key) >= maxLen and " " not in key)):
-            # add it to a list of words to prune
-            wordsToRemove.append(key)
+            # add it to a list of tokens to prune
+            tokensToRemove.append(key)
 
-    for word in wordsToRemove:
-        del dict[word]
+    for token in tokensToRemove:
+        del dict[token]
 
     return dict
 
 
-# # IDF = log((total # of sms's)/(# sms's containing the word))
-# # do log on the word/sms occurrences to get the IDF for each word
-# def weightedIDF(frequency):
-#     return math.log2(5574.0 / frequency) - math.log2(5574.0)
-
-# sigmoid because why not
 def sigmoid(freq):
     try:
         return 1 / (1.0 + math.exp(-freq))
@@ -116,22 +115,18 @@ def sigmoid(freq):
         return 0
 
 
-# combine the dict of words commonly found in spam with the list of words commonly found in ham destructively
-def getSusDict(dataset, minSusFreq = 1, minAntiSusFreq = 10, maxLen = 10):
-    maxSussiness = 5.5
-    antiSusScale = 0.8
-    maxTokenLeng = 20
-    minThreshold = 1
-    wordsToRemove = []
+# combine the set of tokens commonly found in spam with the set of tokens commonly found in ham destructively
+def getTokenSet(dataset, minSusFreq, minAntiSusFreq):
+    tokensToRemove = []
 
     print("\tcreating sus token set...")
-    susDict = getDFDict(dataset, True, maxTokenLeng)
+    susDict = getDFDict(dataset, True)
     print("\tpruning sus token set...")
-    susDict = pruneWords(susDict, minSusFreq, maxLen)
+    susDict = pruneTokens(susDict, minSusFreq)
     print("\tcreating antisus token set...")
-    antiSusDict = getDFDict(dataset, False, maxTokenLeng)
+    antiSusDict = getDFDict(dataset, False)
     print("\tpruning antisus token set...")
-    antiSusDict = pruneWords(antiSusDict, minAntiSusFreq, maxLen)
+    antiSusDict = pruneTokens(antiSusDict, minAntiSusFreq)
 
 
     print("\tcombining token sets...")
@@ -147,21 +142,14 @@ def getSusDict(dataset, minSusFreq = 1, minAntiSusFreq = 10, maxLen = 10):
         if antiSus not in susDict:
             susDict[antiSus] = -antiSusScale * math.log(antiSusDict[antiSus])
 
-    # trim the fat off the word list
+    # trim the fat off the token list
     for sus in susDict.keys():
         # if it's below the threshold, it probably won't affect the outcome much
         if abs(susDict[sus]) < minThreshold:
-            wordsToRemove.append(sus)
+            tokensToRemove.append(sus)
 
-        # # if components of the word are already in the word list
-        # for end in range(len(sus)):
-        #     for start in range(end):
-        #         wordPiece = sus[start:end + 1]
-        #         if wordPiece in susDict:
-        #             wordsToRemove.append(sus)
-
-    for word in wordsToRemove:
-        if word in susDict:
-            del susDict[word]
+    for token in tokensToRemove:
+        if token in susDict:
+            del susDict[token]
 
     return susDict

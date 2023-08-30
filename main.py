@@ -1,20 +1,17 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import nlp
+import customNLP as nlp
+import MLNLP as ml
 
 datasetSize = 1
-testingsetSize = 0.2
+testingsetSize = 0.1
 minSusFreq = 4
 minAntisusFreq = 12
-maxLen = 10
-# weight range of 0.00 - 0.99 used in search, optimal found to be 0.0147
-weightScaling = 0.0147
+bias = 1
+minSusLeng = 30
+lengImportance = 3
 
-
-
-
-def isSpam(sms, wordList, antiWordList, susList):
-    score = 0
+def isSpam(sms, susList):
 
     tokens = nlp.tokenize(sms, susList)
 
@@ -22,15 +19,12 @@ def isSpam(sms, wordList, antiWordList, susList):
     # print("tokens: " + str(tokens))
     # print()
 
+    score = bias
     for token in tokens:
-        score += weightScaling * susList[token]
-        if token in wordList:
-            score += 0.35
-        if token in antiWordList:
-            score -= 0.24
+        score += susList[token]
 
-    if (len(sms) < 30):
-        score -= 5
+    if (len(sms) < minSusLeng):
+        score -= lengImportance * nlp.maxSussiness
 
     if (score >= 0):
         return True
@@ -49,14 +43,6 @@ def format(stat):
 if __name__ == "__main__":
 
     TP = TN = FP = FN = 0
-
-    wordlist = open("wordlist.txt", "r").readlines()
-    for i in range(len(wordlist)):
-        wordlist[i] = wordlist[i].replace("\n", "")
-
-    antiWordlist = open("antiwordlist.txt", "r").readlines()
-    for i in range(len(antiWordlist)):
-        antiWordlist[i] = antiWordlist[i].replace("\n", "")
 
     dataset = open("dataset/SMSSpamCollection", "r")
     dataset = dataset.readlines()
@@ -85,12 +71,12 @@ if __name__ == "__main__":
         # print(sms[i])
 
     print("creating token sets...")
-    susWords = nlp.getSusDict(trainingset, minSusFreq, minAntisusFreq)
+    tokenSet = nlp.getTokenSet(trainingset, minSusFreq, minAntisusFreq)
 
     print("testing spam detection...")
     for sms in testset:
 
-        category = isSpam(sms[1], wordlist, antiWordlist, susWords)
+        category = isSpam(sms[1], tokenSet)
 
         # determine confusion matrix stats
         # if the algo thinks it's spam
@@ -126,7 +112,7 @@ if __name__ == "__main__":
     # susTokenDoc.close()
 
     # print(susWords)
-    print("\nExtracted token list size: " + str(len(susWords)))
+    print("\nExtracted token list size: " + str(len(tokenSet)))
     print("True Pos Accuracy:\t" + str('%.2f'%(TP / (TP + FN) * 100)) + "%")
     print("True Neg Accuracy:\t" + str('%.2f'%(TN / (TN + FP) * 100)) + "%")
     print("Average Accuracy:\t"
