@@ -10,7 +10,7 @@ minThreshold = 1
 
 # 1st sublist is the sus list, 2nd sublist is the antisus list
 ngram = [i for i in range(4, 20)]
-charNGrams = [ngram,ngram]  #[[6],[6]]
+charNGrams = [[6],[6]]
 # no noticeable increases beyond 4-grams
 wordNGrams = [[0],[0]]
 
