@@ -16,8 +16,6 @@ minSusLeng = 30
 lengImportance = 3
 
 def isSpam(sms, susList):
-
-
     score = bias
 
     # tokens = chris.tokenize(sms, susList)
@@ -63,7 +61,7 @@ if __name__ == "__main__":
     # then convert each sms entry to a tuple
     for i in range(int(len(dataset) * datasetSize)):
         # let sms be the current text as a list [ham/spam, text]
-        sms = dataset[i].replace("\n", "").lower().split("\t")
+        sms = dataset[i].replace("\n", "").split("\t")
 
         # if it's one of the first 90%, put it in the training dataset
         if (i < len(trainingset)):
