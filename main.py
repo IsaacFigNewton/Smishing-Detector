@@ -1,27 +1,34 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import nltk
+
 import customNLP as nlp
+import wordNGrams as chris
+import charNGrams as chan
 import MLNLP as ml
 
 datasetSize = 1
-testingsetSize = 0.1
+testingsetSize = 0.2
 minSusFreq = 4
 minAntisusFreq = 12
-bias = 1
+bias = -5.5
 minSusLeng = 30
 lengImportance = 3
 
 def isSpam(sms, susList):
 
+
+    score = bias
+
+    # tokens = chris.tokenize(sms, susList)
     tokens = nlp.tokenize(sms, susList)
+    for token in tokens:
+        score += susList[token]
+
 
     # print(sms)
     # print("tokens: " + str(tokens))
     # print()
-
-    score = bias
-    for token in tokens:
-        score += susList[token]
 
     if (len(sms) < minSusLeng):
         score -= lengImportance * nlp.maxSussiness
@@ -41,7 +48,7 @@ def format(stat):
 
 
 if __name__ == "__main__":
-
+    # nltk.download()
     TP = TN = FP = FN = 0
 
     dataset = open("dataset/SMSSpamCollection", "r")
@@ -95,7 +102,7 @@ if __name__ == "__main__":
 
             # and spam in reality
             if (sms[0]):
-                print("False negative: " + sms[1])
+                # print("False negative: " + sms[1])
                 FN += 1
             # or ham in reality
             else:
@@ -111,7 +118,7 @@ if __name__ == "__main__":
     #     susTokenDoc.writeline(str(token) + "\t" + str(weight))
     # susTokenDoc.close()
 
-    # print(susWords)
+    print(tokenSet)
     print("\nExtracted token list size: " + str(len(tokenSet)))
     print("True Pos Accuracy:\t" + str('%.2f'%(TP / (TP + FN) * 100)) + "%")
     print("True Neg Accuracy:\t" + str('%.2f'%(TN / (TN + FP) * 100)) + "%")

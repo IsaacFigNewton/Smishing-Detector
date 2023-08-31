@@ -1,10 +1,17 @@
 import math
+import wordNGrams as chris
+import charNGrams as chan
 
 maxSussiness = 5.5
 antiSusScale = 0.8
 maxLen = 10
 maxTokenLeng = 20
 minThreshold = 1
+nGrams = [i for i in range(1, 20)]
+susNGrams = nGrams
+antiSusNGrams = nGrams
+
+
 
 def inRanges(tuple, ranges):
     # if len(ranges) > 0:
@@ -17,7 +24,7 @@ def inRanges(tuple, ranges):
 
     return False
 
-# decompose text into a minimal set of tokens from tokens dictionary
+# decompose text into a minimal set of character n-gram tokens from a provided set of tokens
 def tokenize(text, tokens):
     # print("tokenizing sms...")
     # tokens to return
@@ -62,51 +69,6 @@ def tokenize(text, tokens):
 
     return tokenSet
 
-# create a dictionary of tokens that appear in the dataset and the number of docs that contain them
-def getDFDict(dataset, hamSpam):
-    dfDict = {}
-
-    for sms in dataset:
-        # print(sms[1])
-        # add a token to the idfDict if the sms from which it originated is the type desired
-        if (sms[0] == hamSpam):
-            countedTokens = set()
-
-            # for some combined offset...
-            for offset in range(len(sms[1])):
-                # ...loop through all possible maximal strings of the text up to the offset
-                for start in range(offset + 1):
-                    token = sms[1][start: len(sms[1]) - offset + start]
-
-                    # if it's already in the token set...
-                    if len(token) < maxTokenLeng and token in dfDict:
-                        # ...and the token hasn't been counted for this sms yet
-                        if token not in countedTokens:
-                            # ...and it's a maximal token string
-                            if len(tokenize(token, dfDict)) == 1:
-                                # increment the token counter
-                                dfDict[token] += 1
-                            # add it to the list of tokens to ignore
-                            countedTokens.add(token)
-                    else:
-                        dfDict[token] = 1
-
-    return dfDict
-
-
-def pruneTokens(dict, minFreq):
-    tokensToRemove = []
-
-    for key in dict.keys():
-        if (minFreq >= dict[key] or (len(key) >= maxLen and " " not in key)):
-            # add it to a list of tokens to prune
-            tokensToRemove.append(key)
-
-    for token in tokensToRemove:
-        del dict[token]
-
-    return dict
-
 
 def sigmoid(freq):
     try:
@@ -119,14 +81,27 @@ def sigmoid(freq):
 def getTokenSet(dataset, minSusFreq, minAntiSusFreq):
     tokensToRemove = []
 
+    # print("\tcreating sus token set...")
+    # susDict = chris.tokenDFs(dataset, True,  susNGrams)
+    # print("\tpruning sus token set...")
+    # susDict = chris.pruneTokens(susDict, minSusFreq)
+    # # print(susDict)
+    #
+    # print("\tcreating antisus token set...")
+    # antiSusDict = chris.tokenDFs(dataset, False, antiSusNGrams)
+    # print("\tpruning antisus token set...")
+    # antiSusDict = chris.pruneTokens(antiSusDict, minAntiSusFreq)
+    # # print(antiSusDict)
+
     print("\tcreating sus token set...")
-    susDict = getDFDict(dataset, True)
+    susDict = chan.tokenDFs(dataset, True, susNGrams)
     print("\tpruning sus token set...")
-    susDict = pruneTokens(susDict, minSusFreq)
+    susDict = chan.pruneTokens(susDict, minSusFreq)
+
     print("\tcreating antisus token set...")
-    antiSusDict = getDFDict(dataset, False)
+    antiSusDict = chan.tokenDFs(dataset, False, antiSusNGrams)
     print("\tpruning antisus token set...")
-    antiSusDict = pruneTokens(antiSusDict, minAntiSusFreq)
+    antiSusDict = chan.pruneTokens(antiSusDict, minAntiSusFreq)
 
 
     print("\tcombining token sets...")
