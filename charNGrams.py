@@ -26,11 +26,11 @@ def tokenDFs(dataset, hamSpam, nGrams = None):
                         dfDict[token] = 1
     return dfDict
 
-def pruneTokens(dict, minFreq):
+def pruneTokens(dict, minFreq, maxLen):
     tokensToRemove = []
 
     for key in dict.keys():
-        if (minFreq >= dict[key] or (len(key) >= nlp.maxLen and " " not in key)):
+        if (minFreq >= dict[key] or (len(key) >= maxLen and " " not in key)):
             # add it to a list of tokens to prune
             tokensToRemove.append(key)
 

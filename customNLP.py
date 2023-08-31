@@ -2,18 +2,6 @@ import math
 import wordNGrams as chris
 import charNGrams as chan
 
-maxSussiness = 5.5
-antiSusScale = 0.8
-maxLen = 10
-maxTokenLeng = 20
-minThreshold = 1
-
-# 1st sublist is the sus list, 2nd sublist is the antisus list
-ngram = [i for i in range(4, 20)]
-charNGrams = [[6],[6]]
-# no noticeable increases beyond 4-grams
-wordNGrams = [[0],[0]]
-
 def combineSets(set1, set2):
     set3 = {}
     for key in set1.keys():
@@ -87,39 +75,39 @@ def sigmoid(freq):
 
 
 # combine the set of tokens commonly found in spam with the set of tokens commonly found in ham destructively
-def getTokenSet(dataset, minSusFreq, minAntiSusFreq):
+def getTokenSet(dataset, minSusFreq, minAntiSusFreq, maxLen, wordNGrams, charNGrams, maxSussiness, antiSusScale, minWeightThreshold):
     tokensToRemove = []
 
-    print("\tcreating sus word token set...")
+    # print("\tcreating sus word token set...")
     susWordDict = chris.tokenDFs(dataset, True,  wordNGrams[0])
-    print("\tpruning sus word token set...")
+    # print("\tpruning sus word token set...")
     susWordDict = chris.pruneTokens(susWordDict, minSusFreq)
     # print(susDict)
 
-    print("\tcreating sus char token set...")
+    # print("\tcreating sus char token set...")
     susCharDict = chan.tokenDFs(dataset, True, charNGrams[0])
-    print("\tpruning sus char token set...")
-    susCharDict = chan.pruneTokens(susCharDict, minSusFreq)
+    # print("\tpruning sus char token set...")
+    susCharDict = chan.pruneTokens(susCharDict, minSusFreq, maxLen)
 
-    print("\tcombining word and char sus token sets...")
+    # print("\tcombining word and char sus token sets...")
     susDict = combineSets(susWordDict, susCharDict)
 
 
-    print("\n\tcreating antisus word token set...")
+    # print("\n\tcreating antisus word token set...")
     antiSusWordDict = chris.tokenDFs(dataset, False, wordNGrams[1])
-    print("\tpruning antisus word token set...")
+    # print("\tpruning antisus word token set...")
     antiSusWordDict = chris.pruneTokens(antiSusWordDict, minAntiSusFreq)
     # print(antiSusDict)
 
-    print("\tcreating antisus char token set...")
+    # print("\tcreating antisus char token set...")
     antiSusCharDict = chan.tokenDFs(dataset, False, charNGrams[1])
-    print("\tpruning antisus char token set...")
-    antiSusCharDict = chan.pruneTokens(antiSusCharDict, minAntiSusFreq)
+    # print("\tpruning antisus char token set...")
+    antiSusCharDict = chan.pruneTokens(antiSusCharDict, minAntiSusFreq, maxLen)
 
-    print("\tcombining word and char antisus token sets...")
+    # print("\tcombining word and char antisus token sets...")
     antiSusDict = combineSets(antiSusWordDict, antiSusCharDict)
 
-    print("\n\tcombining all token sets...")
+    # print("\n\tcombining all token sets...")
     # combine the sus and antisus frequencies destructively and then put them on a stretched sigmoid about 0
     for sus in susDict.keys():
         if sus in antiSusDict:
@@ -135,7 +123,7 @@ def getTokenSet(dataset, minSusFreq, minAntiSusFreq):
     # trim the fat off the token list
     for sus in susDict.keys():
         # if it's below the threshold, it probably won't affect the outcome much
-        if abs(susDict[sus]) < minThreshold:
+        if abs(susDict[sus]) < minWeightThreshold:
             tokensToRemove.append(sus)
 
     for token in tokensToRemove:
