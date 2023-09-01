@@ -74,9 +74,24 @@ def sigmoid(freq):
         return 0
 
 
-# combine the set of tokens commonly found in spam with the set of tokens commonly found in ham destructively
-def getTokenSet(dataset, minSusFreq, minAntiSusFreq, maxLen, wordNGrams, charNGrams, maxSussiness, antiSusScale, minWeightThreshold):
+def pruneFurther(susDict, minWeightThreshold):
     tokensToRemove = []
+
+    # trim the fat off the token list
+    for sus in susDict.keys():
+        # if it's below the threshold, it probably won't affect the outcome much
+        if abs(susDict[sus]) < minWeightThreshold:
+            tokensToRemove.append(sus)
+
+    for token in tokensToRemove:
+        if token in susDict:
+            del susDict[token]
+
+    return susDict
+
+# combine the set of tokens commonly found in spam with the set of tokens commonly found in ham destructively
+def getTokenSet(dataset, minSusFreq, minAntiSusFreq, maxLen, wordNGrams, charNGrams, maxSussiness, antiSusScale):
+
 
     # print("\tcreating sus word token set...")
     susWordDict = chris.tokenDFs(dataset, True,  wordNGrams[0])
@@ -119,15 +134,5 @@ def getTokenSet(dataset, minSusFreq, minAntiSusFreq, maxLen, wordNGrams, charNGr
     for antiSus in antiSusDict.keys():
         if antiSus not in susDict:
             susDict[antiSus] = -antiSusScale * math.log(antiSusDict[antiSus])
-
-    # trim the fat off the token list
-    for sus in susDict.keys():
-        # if it's below the threshold, it probably won't affect the outcome much
-        if abs(susDict[sus]) < minWeightThreshold:
-            tokensToRemove.append(sus)
-
-    for token in tokensToRemove:
-        if token in susDict:
-            del susDict[token]
 
     return susDict
