@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 import matplotlib.pyplot as plt
 import nltk
@@ -7,7 +9,7 @@ import wordNGrams as chris
 import charNGrams as chan
 import MLNLP as ml
 
-datasetSize = 0.05
+datasetSize = 1
 testingsetSize = 0.2
 
 # 1st sublist is the sus list, 2nd sublist is the antisus list
@@ -46,72 +48,98 @@ def format(stat):
 
 
 
-def testNewParams(trainingset,
-                   minSusFreq,
-                   minAntisusFreq,
-                   maxTokenLen,
-                   bias,
-                   minSusLen,
-                   lenImportance,
-                   wordNGrams,
-                   charNGrams,
-                   maxSussiness,
-                   antiSusScale,
-                   minWeightThreshold):
-    TP = TN = FP = FN = 0
+def testNewParams(trainingset, nGrams, optimalParams, currParam, upperLowerDiv):
+    currParam += 3
+    params = optimalParams.copy()
+    #
+    # minSusFreq1 = optimalParams[3]
+    # minAntisusFreq1 = optimalParams[4]
+    # maxTokenLen1 = optimalParams[5]
+    # bias1 = optimalParams[6]
+    # minSusLen1 = optimalParams[7]
+    # lenImportance1 = optimalParams[8]
+    # maxSussiness1 = optimalParams[9]
+    # antiSusScale1 = optimalParams[10]
+    # minWeightThreshold1 = optimalParams[11]
 
-    # print("creating token sets...")
-    tokenSet = nlp.getTokenSet(trainingset,
-                               minSusFreq,
-                               minAntisusFreq,
-                               maxTokenLen,
-                               wordNGrams,
-                               charNGrams,
-                               maxSussiness,
-                               antiSusScale)
+    # originally checking in 0.01 increments, but that was intractably slow and maybe unnecessary after all
+    for param in range(upperLowerDiv[0], upperLowerDiv[1]):
+        param /= upperLowerDiv[2]
+        params[currParam] = param
 
-    tokenSet = nlp.pruneFurther(tokenSet, minWeightThreshold)
+        TP = TN = FP = FN = 0
 
-    # print("testing spam detection...")
-    for sms in testset:
+        # print("creating token sets...")
+        tokenSet = nlp.getTokenSet(trainingset,
+                                   params[3],
+                                   params[4],
+                                   params[5],
+                                   nGrams[0],
+                                   nGrams[1],
+                                   params[9],
+                                   params[10])
 
-        category = isSpam(sms[1], tokenSet, maxSussiness, bias, minSusLen, lenImportance)
 
-        # determine confusion matrix stats
-        # if the algo thinks it's spam
-        if (category):
+        tokenSet = nlp.pruneFurther(tokenSet, params[11])
 
-            # and spam in reality
-            if (sms[0]):
-                TP += 1
-            # or ham in reality
+        # print("testing spam detection...")
+        for sms in testset:
+
+            category = isSpam(sms[1], tokenSet, params[9], params[6], params[7], params[8])
+
+            # determine confusion matrix stats
+            # if the algo thinks it's spam
+            if (category):
+
+                # and spam in reality
+                if (sms[0]):
+                    TP += 1
+                # or ham in reality
+                else:
+                    # print("False positive: " + sms[1])
+                    FP += 1
+
+            # if the algo thinks it's ham
             else:
-                # print("False positive: " + sms[1])
-                FP += 1
 
-        # if the algo thinks it's ham
-        else:
+                # and spam in reality
+                if (sms[0]):
+                    # print("False negative: " + sms[1])
+                    FN += 1
+                # or ham in reality
+                else:
+                    TN += 1
 
-            # and spam in reality
-            if (sms[0]):
-                # print("False negative: " + sms[1])
-                FN += 1
-            # or ham in reality
-            else:
-                TN += 1
+        TP /= len(testset)
+        TN /= len(testset)
+        FP /= len(testset)
+        FN /= len(testset)
+        # TP accuracy
+        TPA = TP / (TP + FN)
+        # TN accuracy
+        TNA = TN / (TN + FP)
+        # Average accuracy
+        AA = (TPA + TNA) / 2
 
-    TP /= len(testset)
-    TN /= len(testset)
-    FP /= len(testset)
-    FN /= len(testset)
-    # TP accuracy
-    TPA = TP / (TP + FN)
-    # TN accuracy
-    TNA = TN / (TN + FP)
-    # Average accuracy
-    AA = (TPA + TNA) / 2
 
-    return [AA, TPA, TNA]
+        if AA > optimalParams[0]:
+            optimalParams = params.copy()
+            optimalParams[0] = AA
+            optimalParams[1] = TPA
+            optimalParams[2] = TNA
+
+
+        # print("Current value: " + str('%.3f' % (param)))
+        # # print("True Pos Accuracy:\t" + str('%.2f'%(TPA * 100)) + "%")
+        # # print("True Neg Accuracy:\t" + str('%.2f'%(TNA * 100)) + "%")
+        # print("Average Accuracy:\t"
+        #         + str('%.2f'%(AA * 100))
+        #         + "%")
+        # print(optimalParams)
+
+
+    print("Optimal parameters: " + str(optimalParams))
+    return optimalParams
 
 
 
@@ -119,19 +147,27 @@ def testNewParams(trainingset,
 
 # **********************************************************************************************************************
 if __name__ == "__main__":
-    minSusFreq = 4
+    minSusFreq = 3
     minAntisusFreq = 12
-    bias = -5.5
-    minSusLen = 30
-    lengImportance = 3
-
-    maxSussiness = 5.5
-    antiSusScale = 0.8
     maxTokenLen = 10
+    bias = -5.55
+    minSusLen = 42
+    lengImportance = 3
+    maxSussiness = 5.0
+    antiSusScale = 0.65
     minWeightThreshold = 1
 
-    loadingRate = 0.0
-    allParams = []
+    # minSusFreq = random.randint(1, 10)
+    # minAntisusFreq = random.randint(1, 20)
+    # maxTokenLen = random.randint(2, 20)
+    # bias = random.randint(1, 20) / -2
+    # minSusLen = random.randint(1, 30)
+    # lengImportance = random.randint(1, 10)
+    # maxSussiness = random.randint(1, 20)
+    # antiSusScale = random.randint(1, 10)/10
+    # minWeightThreshold = random.randint(1, 20) / 10
+
+    # Optimal parameters: [0.9802035514750365, 0.986206896551724, 0.9742002063983488, 3.0, 12, 10, -5.55, 42.0, 3, 5.0, 0.65, 1]
 
     dataset = open("dataset/SMSSpamCollection", "r")
     dataset = dataset.readlines()
@@ -168,63 +204,92 @@ if __name__ == "__main__":
                      lengImportance,
                      maxSussiness,
                      antiSusScale,
-                     maxTokenLen,
                      minWeightThreshold]
 
+    print("\nFinding optimal minSusFreq...")
+    optimalParams = testNewParams(trainingset, [wordNGrams, charNGrams], optimalParams, 0, (0, 5, 1))
+
+    print("\nFinding optimal minAntisusFreq...")
+    optimalParams = testNewParams(trainingset, [wordNGrams, charNGrams], optimalParams, 1, (5, 15, 1))
+
+    print("\nFinding optimal minSusLen...")
+    optimalParams = testNewParams(trainingset, [wordNGrams, charNGrams], optimalParams, 4, (10, 50, 1))
+
+    print("\nFinding optimal maxTokenLen...")
+    optimalParams = testNewParams(trainingset, [wordNGrams, charNGrams], optimalParams, 2, (5, 15, 1))
+
+    print("\nFinding optimal lengImportance...")
+    optimalParams = testNewParams(trainingset, [wordNGrams, charNGrams], optimalParams, 5, (20, 40, 10))
+
+    print("\nFinding optimal maxSussiness...")
+    optimalParams = testNewParams(trainingset, [wordNGrams, charNGrams], optimalParams, 6, (500, 600, 100))
+
+    print("\nFinding optimal antiSusScale...")
+    optimalParams = testNewParams(trainingset, [wordNGrams, charNGrams], optimalParams, 7, (50, 150, 100))
+
+    print("\nFinding optimal bias...")
+    optimalParams = testNewParams(trainingset, [wordNGrams, charNGrams], optimalParams, 3, (-600, -500, 100))
+
+    print("\nFinding optimal minWeightThreshold...")
+    optimalParams = testNewParams(trainingset, [wordNGrams, charNGrams], optimalParams, 8, (50, 150, 100))
 
 
-    print("Finding optimal minWeightThreshold...")
-    # originally checking in 0.01 increments, but that was intractably slow and maybe unnecessary after all
-    for minWeightThreshold in range(600):
-        minWeightThreshold /= 50
-
-        accuracies = testNewParams(trainingset,
-                                     minSusFreq,
-                                     minAntisusFreq,
-                                     maxTokenLen,
-                                     bias,
-                                     minSusLen,
-                                     lengImportance,
-                                     wordNGrams,
-                                     charNGrams,
-                                     maxSussiness,
-                                     antiSusScale,
-                                     minWeightThreshold)
-
-        print("minWeightThreshold = " + str('%.3f'%(minWeightThreshold)))
-        print(accuracies)
-
-        if accuracies[0] > optimalParams[0]:
-            optimalParams = [accuracies[0], accuracies[1], accuracies[2],
-                             minSusFreq,
-                             minAntisusFreq,
-                             maxTokenLen,
-                             bias,
-                             minSusLen,
-                             lengImportance,
-                             maxSussiness,
-                             antiSusScale,
-                             maxTokenLen,
-                             minWeightThreshold]
+    print("\n\nOptimal parameters: " + str(optimalParams))
 
 
-    # for minSusFreq in range(5):
-    #     for minAntisusFreq in range(10, 15):
-    #         for minSusLen in range(20, 40):
-    #             for lengImportance in range(5):
-    #                 for maxSussiness in range(4, 24):
-    #                     maxSussiness /= 4
+    # TP = TN = FP = FN = 0
     #
-    #                     print("Progress: " + str('%.5f' % (loadingRate * 100)) + "%")
-    #                     # originally checking in 0.05 increments, but that was intractably slow
-    #                     for antiSusScale in range(10):
-    #                         antiSusScale /= 10
-    #                         for maxTokenLen in range(1, 15):
-    #                             for bias in range(-4, -24, -1):
-    #                                 bias /= 4
-
-
-    print("Optimal parameters: " + str(optimalParams))
+    # # print("creating token sets...")
+    # tokenSet = nlp.getTokenSet(trainingset,
+    #                            minSusFreq,
+    #                            minAntisusFreq,
+    #                            maxTokenLen,
+    #                            wordNGrams,
+    #                            charNGrams,
+    #                            maxSussiness,
+    #                            antiSusScale)
+    #
+    # tokenSet = nlp.pruneFurther(tokenSet, minWeightThreshold)
+    #
+    # # print("testing spam detection...")
+    # for sms in testset:
+    #
+    #     category = isSpam(sms[1], tokenSet, maxSussiness, bias, minSusLen, lenImportance)
+    #
+    #     # determine confusion matrix stats
+    #     # if the algo thinks it's spam
+    #     if (category):
+    #
+    #         # and spam in reality
+    #         if (sms[0]):
+    #             TP += 1
+    #         # or ham in reality
+    #         else:
+    #             # print("False positive: " + sms[1])
+    #             FP += 1
+    #
+    #     # if the algo thinks it's ham
+    #     else:
+    #
+    #         # and spam in reality
+    #         if (sms[0]):
+    #             # print("False negative: " + sms[1])
+    #             FN += 1
+    #         # or ham in reality
+    #         else:
+    #             TN += 1
+    #
+    # TP /= len(testset)
+    # TN /= len(testset)
+    # FP /= len(testset)
+    # FN /= len(testset)
+    # # TP accuracy
+    # TPA = TP / (TP + FN)
+    # # TN accuracy
+    # TNA = TN / (TN + FP)
+    # # Average accuracy
+    # AA = (TPA + TNA) / 2
+    #
     # print("\nExtracted token list size: " + str(len(tokenSet)))
     # print("True Pos Accuracy:\t" + str('%.2f'%(TPA * 100)) + "%")
     # print("True Neg Accuracy:\t" + str('%.2f'%(TNA * 100)) + "%")
