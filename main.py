@@ -1,26 +1,17 @@
-import random
-
-import numpy as np
-import matplotlib.pyplot as plt
-import nltk
-
 import customNLP as nlp
-import wordNGrams as chris
-import charNGrams as chan
-import MLNLP as ml
+# import random
+# import nltk
 
 datasetSize = 1
 testingsetSize = 0.2
 
 # 1st sublist is the sus list, 2nd sublist is the antisus list
-ngram = [i for i in range(4, 20)]
 charNGrams = [[6],[6]]
 wordNGrams = [[0],[0]]    #[[4],[4]]
 
 def isSpam(sms, susList, maxSussiness, bias, minSusLen, lenImportance):
     score = bias
 
-    # tokens = chris.tokenize(sms, susList)
     tokens = nlp.tokenize(sms, susList)
     for token in tokens:
         score += susList[token]
@@ -122,6 +113,8 @@ def testNewParams(trainingset, nGrams, optimalParams, currParam, upperLowerDiv):
 
 # **********************************************************************************************************************
 if __name__ == "__main__":
+    # nltk.download()
+
     minSusFreq = 3
     minAntisusFreq = 12
     maxTokenLen = 10
