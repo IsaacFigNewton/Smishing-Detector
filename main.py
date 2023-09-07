@@ -258,9 +258,7 @@ if __name__ == "__main__":
     print("\nExtracted token list size: " + str(len(tokenSet)))
     print("True Pos Accuracy:\t" + str('%.2f'%(TPA * 100)) + "%")
     print("True Neg Accuracy:\t" + str('%.2f'%(TNA * 100)) + "%")
-    print("Average Accuracy:\t"
-            + str('%.2f'%(AA * 100))
-            + "%")
+    print("Average Accuracy:\t"  + str('%.2f'%(AA * 100))  + "%")
     # print confusion matrix
     print("\t\t\t\t\t\tReality:\n" +
           "\t\t\t\t|\tHam\t\t|\tSpam\t|\n" +
