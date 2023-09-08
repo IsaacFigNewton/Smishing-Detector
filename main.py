@@ -6,27 +6,26 @@ datasetSize = 1
 testingsetSize = 0.2
 
 # 1st sublist is the sus list, 2nd sublist is the antisus list
-charNGrams = [[4, 6],[6]]   # [[6],[6]]
+charNGrams = [[4, 5, 6, 7, 9],[4, 5, 6, 7]]   # [[6],[6]]
 wordNGrams = [[0],[0]]      # [[4],[4]]
 
-def isSpam(sms, susList, maxSussiness, bias, minSusLen, lenImportance):
+def getSpamScore(sms, susList, maxSussiness, bias, minSusLen, lenImportance):
     score = bias
 
     tokens = nlp.tokenize(sms, susList)
     for token in tokens:
         score += susList[token]
 
-    # print(sms)
-    # print("tokens: " + str(tokens))
-    # print()
-
     if (len(sms) < minSusLen):
         score -= lenImportance * maxSussiness
 
-    if (score >= 0):
-        return True
 
-    return False
+    # print(sms)
+    # print(format(score))
+    # # print("tokens: " + str(tokens))
+    # print()
+
+    return score
 
 
 
@@ -60,7 +59,8 @@ def testNewParams(trainingSet, testingSet, nGrams, optimalParams, currParam, upp
         tokenSet = nlp.pruneFurther(tokenSet, params[11])
 
         for sms in testingSet:
-            category = isSpam(sms[1], tokenSet, params[9], params[6], params[7], params[8])
+            score = getSpamScore(sms[1], tokenSet, params[9], params[6], params[7], params[8])
+            category = score >= 0
 
             # determine confusion matrix stats
             # if the algo thinks it's spam
@@ -114,10 +114,10 @@ def testNewParams(trainingSet, testingSet, nGrams, optimalParams, currParam, upp
 if __name__ == "__main__":
     # nltk.download()
 
-    minSusFreq = 3      #3 for Almeida set
+    minSusFreq = 3
     minAntisusFreq = 12
     maxTokenLen = 10
-    bias = -5.55
+    bias = -3.5
     minSusLen = 42
     lenImportance = 3
     maxSussiness = 5.0
@@ -142,10 +142,10 @@ if __name__ == "__main__":
         # let the current entry in the dataset be a tuple of (True/False, text)
         testingSet[i] = (categories[sms[0]], sms[1])
 
-
+    #
     # dataset = open("dataset/SMSSpamCollection", "r").readlines()
     # trainingSet = [None] * int((1 - testingsetSize) * len(dataset) * datasetSize)
-    # testset = [None] * int(testingsetSize * len(dataset) * datasetSize)
+    # testingSet = [None] * int(testingsetSize * len(dataset) * datasetSize)
     #
     # print("creating testing and training datasets...")
     # # convert each sms to a list of 2 items, with True indicating that it's spam and False indicating ham
@@ -162,8 +162,8 @@ if __name__ == "__main__":
     #     # if it's one of the last 10%, put it in the testing dataset
     #     else:
     #         # let the current entry in the dataset be a tuple of (True/False, text)
-    #         testset[i - len(trainingSet) - 1] = (categories[sms[0]], sms[1])
-    #
+    #         testingSet[i - len(trainingSet) - 1] = (categories[sms[0]], sms[1])
+
 
     # optimalParams = [0, 0,  0,
     #                  minSusFreq,
@@ -209,18 +209,17 @@ if __name__ == "__main__":
                                charNGrams,
                                maxSussiness,
                                antiSusScale)
-
     tokenSet = nlp.pruneFurther(tokenSet, minWeightThreshold)
 
     print("testing spam detection...\n")
     for sms in testingSet:
 
-        category = isSpam(sms[1], tokenSet, maxSussiness, bias, minSusLen, lenImportance)
+        score = getSpamScore(sms[1], tokenSet, maxSussiness, bias, minSusLen, lenImportance)
+        category = score >= 0
 
         # determine confusion matrix stats
         # if the algo thinks it's spam
         if (category):
-
             # and spam in reality
             if (sms[0]):
                 TP += 1
@@ -231,10 +230,10 @@ if __name__ == "__main__":
 
         # if the algo thinks it's ham
         else:
-
             # and spam in reality
             if (sms[0]):
-                print("False negative: " + sms[1])
+                print("\nFalse negative: " + sms[1])
+                print(score)
                 FN += 1
             # or ham in reality
             else:
