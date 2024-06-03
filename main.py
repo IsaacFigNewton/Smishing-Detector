@@ -65,7 +65,9 @@ def get_spam_scores(documents, corpus):
     print(model_predictions.head())
 
     # REIMPLEMENT TF-IDF SCORING SYSTEM
-    # score = (word tf-idf scores from ham) - (word tf-idf scores from spam)
+    # handle common symbol replacements/letter substitutions
+    # then use stemming and lemmatization to reduce token vector space
+    # score = (token tf-idf scores from ham) - (token tf-idf scores from spam)
 
     # if (len(sms) < minSusLen):
     #     score += lenWeight * len(sms)
