@@ -65,7 +65,8 @@ def get_spam_scores(documents, corpus):
     print(model_predictions.head())
 
     # REIMPLEMENT TF-IDF SCORING SYSTEM
-    # handle common symbol replacements/letter substitutions
+    # use regexes to parse, score, then replace emails, phone numbers, urls with dummy string for later NLP
+    # then handle common symbol replacements/letter substitutions
     # then use stemming and lemmatization to reduce token vector space
     # score = (token tf-idf scores from ham) - (token tf-idf scores from spam)
 
