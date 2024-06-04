@@ -9,6 +9,8 @@ To use this:
 		numpy
 		matplotlib
 		nltk
+		pandas
+		scikit-learn
 	3 Open main.py
 	4 In main.py, uncomment the following lines:
 		"import nltk" at the top of main.py
